@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Civilisation Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Mini Civilisation</h1>
+        <div id="graphics">
+            <!-- Building visuals will be shown here from assets directory -->
+        </div>
+        <div id="status">
+            <p>Population: <span id="population">1</span></p>
+            <p>Food: <span id="food">10</span></p>
+            <p>Wood: <span id="wood">10</span></p>
+            <p>Stone: <span id="stone">5</span></p>
+        </div>
+        <div id="actions">
+            <button onclick="gather('food')">Gather Food</button>
+            <button onclick="gather('wood')">Gather Wood</button>
+            <button onclick="gather('stone')">Gather Stone</button>
+            <button onclick="build('house')">Build House (5 Wood, 2 Stone)</button>
+            <button onclick="build('farm')">Build Farm (8 Wood, 5 Stone)</button>
+            <button onclick="build('barracks')">Build Barracks (12 Wood, 10 Stone)</button>
+            <button onclick="build('wall')">Build Wall (6 Wood, 8 Stone)</button>
+            <button onclick="trainSoldier()">Train Soldier (5 Food, 1 Population, Barracks)</button>
+        </div>
+        <div id="log"></div>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>
