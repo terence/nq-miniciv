@@ -7,8 +7,26 @@ let state = {
     farms: 0,
     barracks: 0,
     soldiers: 0,
-    walls: 0
+    walls: 0,
+    explored: 0,
+    civilisationsFound: 0
 };
+function explore() {
+    // Require at least 1 soldier to explore
+    if (state.soldiers < 1) {
+        log('You need at least 1 soldier to explore.');
+        return;
+    }
+    state.explored++;
+    // 30% chance to find a civilisation per explore
+    if (Math.random() < 0.3) {
+        state.civilisationsFound++;
+        log('You discovered a new civilisation! Total found: ' + state.civilisationsFound);
+    } else {
+        log('Exploration yielded no new civilisations.');
+    }
+    updateUI();
+}
 
 function updateUI() {
     document.getElementById('population').textContent = state.population;
@@ -41,6 +59,8 @@ function updateGraphics() {
     }
     html += ` <strong>${state.walls}</strong></div>`;
     html += `<div>Soldiers: <strong>${state.soldiers}</strong></div>`;
+    html += `<div>Explored: <strong>${state.explored}</strong></div>`;
+    html += `<div>Civilisations Found: <strong>${state.civilisationsFound}</strong></div>`;
     html += `</div>`;
     document.getElementById('graphics').innerHTML = html;
 }

@@ -5,6 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mini Civilisation Game</title>
     <link rel="stylesheet" href="style.css">
+
+            <!-- Google tag (gtag.js) -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-34RWEG01MV"></script>
+        <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'G-34RWEG01MV');
+        </script>
+        <!-- End Google Analytics -->
+
 </head>
 <body>
     <div class="container">
@@ -27,6 +39,7 @@
             <button onclick="build('barracks')">Build Barracks (12 Wood, 10 Stone)</button>
             <button onclick="build('wall')">Build Wall (6 Wood, 8 Stone)</button>
             <button onclick="trainSoldier()">Train Soldier (5 Food, 1 Population, Barracks)</button>
+            <button onclick="explore()">Explore (Requires 1 Soldier)</button>
         </div>
         <div id="log"></div>
     </div>
