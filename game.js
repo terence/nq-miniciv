@@ -26,6 +26,61 @@ let state = {
     civilisationsFound: 0,
     turn: 1
 };
+// IndexedDB setup
+const DB_NAME = 'miniciv_db';
+const DB_VERSION = 1;
+const STORE_NAME = 'game_state';
+let db;
+
+function openDB() {
+    return new Promise((resolve, reject) => {
+        const request = window.indexedDB.open(DB_NAME, DB_VERSION);
+        request.onupgradeneeded = function(e) {
+            db = e.target.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                db.createObjectStore(STORE_NAME);
+            }
+        };
+        request.onsuccess = function(e) {
+            db = e.target.result;
+            resolve();
+        };
+        request.onerror = function(e) {
+            reject(e);
+        };
+    });
+}
+
+function saveState() {
+    if (!db) return;
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const store = tx.objectStore(STORE_NAME);
+    store.put(state, 'current');
+}
+
+function loadState() {
+    return new Promise((resolve) => {
+        if (!db) return resolve();
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.get('current');
+        req.onsuccess = function(e) {
+            if (e.target.result) {
+                Object.assign(state, e.target.result);
+            }
+            resolve();
+        };
+        req.onerror = function() {
+            resolve();
+        };
+    });
+}
+
+// Save after every action
+function saveAfterAction() {
+    saveState();
+}
+
 function explore() {
     // Require at least 1 soldier to explore
     if (state.soldiers < 1) {
@@ -46,6 +101,7 @@ function explore() {
         log('Exploration yielded no new civilisations. Total encountered: ' + state.civilisationsFound);
     }
     updateUI();
+    saveAfterAction();
 }
 
 function updateUI() {
@@ -76,6 +132,20 @@ function updateUI() {
     var exploreBtn = document.getElementById('explore-btn');
     if (exploreBtn) exploreBtn.style.display = (state.soldiers > 0) ? '' : 'none';
     updateGraphics();
+    // Barbarian attack event (5% chance per turn)
+    if (state.turn > 1 && Math.random() < 0.05) {
+        let barbarians = Math.floor(Math.random() * 2) + 1; // 1-2 barbarians
+        if (state.soldiers >= barbarians) {
+            log(`Barbarians attacked (${barbarians}) but your soldiers defended successfully!`);
+            state.soldiers -= barbarians;
+        } else {
+            let lostPop = Math.min(state.population - 1, barbarians * 2);
+            state.population -= lostPop;
+            state.food = Math.max(0, state.food - barbarians * 5);
+            log(`Barbarians attacked (${barbarians})! You lost ${lostPop} population and ${barbarians * 5} food.`);
+        }
+        updateUI();
+    }
 }
 // Show SVG images for buildings
 function updateGraphics() {
@@ -105,6 +175,7 @@ function trainSoldier() {
         state.turn++;
         log('You trained a soldier!');
         updateUI();
+        saveAfterAction();
     } else if (state.barracks === 0) {
         log('You need a barracks to train soldiers.');
     } else if (state.food < 5) {
@@ -128,6 +199,7 @@ function gather(resource) {
     state.turn++;
     log(`You gathered ${amount} ${resource}.`);
     updateUI();
+    saveAfterAction();
 }
 
 function build(type) {
@@ -176,6 +248,7 @@ function build(type) {
     }
     if (acted) state.turn++;
     updateUI();
+    if (acted) saveAfterAction();
 }
 
 // Food consumption per population per turn
@@ -187,9 +260,12 @@ function nextTurn() {
         log('Your people are starving!');
     }
     updateUI();
+    saveAfterAction();
 }
 
 // Advance turn every 20 seconds
 setInterval(nextTurn, 20000);
 
 updateUI();
+// Load state on startup
+openDB().then(loadState).then(updateUI);

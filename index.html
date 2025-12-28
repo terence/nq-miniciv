@@ -21,6 +21,7 @@
 <body>
     <div class="container">
         <h1>Mini Civilisation</h1>
+        <div id="log"></div>
         <div id="asset-dashboard">
             <div class="asset-row">
                 <div class="asset-item"><img src="assets/house.svg" class="asset-icon" alt="House"><span id="houses">0</span></div>
@@ -49,9 +50,6 @@
                 </div>
             </div>
         </div>
-        <div id="graphics">
-            <!-- Building visuals will be shown here from assets directory -->
-        </div>
         <div id="actions">
             <button onclick="gather('food')"><span style="text-decoration:underline;">F</span>ood</button>
             <button onclick="gather('wood')"><span style="text-decoration:underline;">W</span>ood</button>
@@ -63,7 +61,6 @@
             <button id="train-soldier-btn" onclick="trainSoldier()" style="display:none;">Train Soldier (5 Food, 1 Population, Barracks)</button>
             <button id="explore-btn" onclick="explore()" style="display:none;">Explore (Requires 1 Soldier)</button>
         </div>
-        <div id="log"></div>
     </div>
     <script src="game.js"></script>
 </body>
