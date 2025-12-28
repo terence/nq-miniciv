@@ -60,8 +60,16 @@
             <button onclick="build('wall')">Build Wall (6 Wood, 8 Stone)</button>
             <button id="train-soldier-btn" onclick="trainSoldier()" style="display:none;">Train Soldier (5 Food, 1 Population, Barracks)</button>
             <button id="explore-btn" onclick="explore()" style="display:none;">Explore (Requires 1 Soldier)</button>
+            <button id="manual-save-btn" onclick="manualSave()">Save Game</button>
         </div>
     </div>
     <script src="game.js"></script>
+    <script>
+function manualSave() {
+    if (typeof saveAfterAction === 'function') saveAfterAction();
+    if (typeof saveSessionState === 'function') saveSessionState();
+    document.getElementById('log').textContent = 'Game saved!';
+}
+</script>
 </body>
 </html>
