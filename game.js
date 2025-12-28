@@ -1,3 +1,17 @@
+// Hotkeys for resource gathering
+document.addEventListener('keydown', function(e) {
+    if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) return;
+    if (e.key === 'f' || e.key === 'F') {
+        gather('food');
+        e.preventDefault();
+    } else if (e.key === 'w' || e.key === 'W') {
+        gather('wood');
+        e.preventDefault();
+    } else if (e.key === 's' || e.key === 'S') {
+        gather('stone');
+        e.preventDefault();
+    }
+});
 let state = {
     population: 1,
     food: 10,
@@ -9,7 +23,8 @@ let state = {
     soldiers: 0,
     walls: 0,
     explored: 0,
-    civilisationsFound: 0
+    civilisationsFound: 0,
+    turn: 1
 };
 function explore() {
     // Require at least 1 soldier to explore
@@ -18,12 +33,17 @@ function explore() {
         return;
     }
     state.explored++;
+    state.turn++;
     // 30% chance to find a civilisation per explore
+    let found = false;
     if (Math.random() < 0.3) {
         state.civilisationsFound++;
-        log('You discovered a new civilisation! Total found: ' + state.civilisationsFound);
+        found = true;
+    }
+    if (found) {
+        log('You discovered a new civilisation! Total encountered: ' + state.civilisationsFound);
     } else {
-        log('Exploration yielded no new civilisations.');
+        log('Exploration yielded no new civilisations. Total encountered: ' + state.civilisationsFound);
     }
     updateUI();
 }
@@ -33,34 +53,47 @@ function updateUI() {
     document.getElementById('food').textContent = state.food;
     document.getElementById('wood').textContent = state.wood;
     document.getElementById('stone').textContent = state.stone;
+    // Dashboard extra fields
+    if (document.getElementById('soldiers')) document.getElementById('soldiers').textContent = state.soldiers;
+    if (document.getElementById('explored')) document.getElementById('explored').textContent = state.explored;
+    if (document.getElementById('civilisations')) document.getElementById('civilisations').textContent = state.civilisationsFound;
+    // Asset dashboard fields
+    if (document.getElementById('houses')) document.getElementById('houses').textContent = state.houses;
+    if (document.getElementById('barracks')) document.getElementById('barracks').textContent = state.barracks;
+    if (document.getElementById('farms')) document.getElementById('farms').textContent = state.farms;
+    if (document.getElementById('walls')) document.getElementById('walls').textContent = state.walls;
+    // Exploration progress bar (arbitrary max 20 for demo)
+    let maxExplored = 20;
+    let percent = Math.min(100, Math.round((state.explored / maxExplored) * 100));
+    let bar = document.getElementById('explore-bar');
+    if (bar) bar.style.width = percent + '%';
+    // Update turn counter
+    if (document.getElementById('turn')) document.getElementById('turn').textContent = state.turn;
+    // Show/hide train soldier button
+    var trainBtn = document.getElementById('train-soldier-btn');
+    if (trainBtn) trainBtn.style.display = (state.barracks > 0) ? '' : 'none';
+    // Show/hide explore button
+    var exploreBtn = document.getElementById('explore-btn');
+    if (exploreBtn) exploreBtn.style.display = (state.soldiers > 0) ? '' : 'none';
     updateGraphics();
 }
 // Show SVG images for buildings
 function updateGraphics() {
+    // Only show graphics visuals, not asset counts
     let html = `<div style='text-align:center;padding:16px;'>`;
-    html += `<div>Houses: `;
+    // Optionally, you can show images for each asset if desired, but not counts
     for (let i = 0; i < state.houses; i++) {
         html += `<img src='assets/house.svg' alt='House' style='width:40px;height:28px;margin:2px;vertical-align:middle;'>`;
     }
-    html += ` <strong>${state.houses}</strong></div>`;
-    html += `<div>Farms: `;
     for (let i = 0; i < state.farms; i++) {
         html += `<img src='assets/farm.svg' alt='Farm' style='width:54px;height:20px;margin:2px;vertical-align:middle;'>`;
     }
-    html += ` <strong>${state.farms}</strong></div>`;
-    html += `<div>Barracks: `;
     for (let i = 0; i < state.barracks; i++) {
         html += `<img src='assets/barracks.svg' alt='Barracks' style='width:40px;height:28px;margin:2px;vertical-align:middle;'>`;
     }
-    html += ` <strong>${state.barracks}</strong></div>`;
-    html += `<div>Walls: `;
     for (let i = 0; i < state.walls; i++) {
         html += `<img src='assets/wall.svg' alt='Wall' style='width:40px;height:14px;margin:2px;vertical-align:middle;'>`;
     }
-    html += ` <strong>${state.walls}</strong></div>`;
-    html += `<div>Soldiers: <strong>${state.soldiers}</strong></div>`;
-    html += `<div>Explored: <strong>${state.explored}</strong></div>`;
-    html += `<div>Civilisations Found: <strong>${state.civilisationsFound}</strong></div>`;
     html += `</div>`;
     document.getElementById('graphics').innerHTML = html;
 }
@@ -69,6 +102,7 @@ function trainSoldier() {
         state.food -= 5;
         state.population--;
         state.soldiers++;
+        state.turn++;
         log('You trained a soldier!');
         updateUI();
     } else if (state.barracks === 0) {
@@ -91,11 +125,13 @@ function gather(resource) {
         amount += state.farms * 3;
     }
     state[resource] += amount;
+    state.turn++;
     log(`You gathered ${amount} ${resource}.`);
     updateUI();
 }
 
 function build(type) {
+    let acted = false;
     if (type === 'house') {
         if (state.wood >= 5 && state.stone >= 2) {
             state.wood -= 5;
@@ -103,6 +139,7 @@ function build(type) {
             state.houses++;
             state.population++;
             log('You built a house! Population increased.');
+            acted = true;
         } else {
             log('Not enough resources to build a house.');
         }
@@ -112,6 +149,7 @@ function build(type) {
             state.stone -= 5;
             state.farms++;
             log('You built a farm! Food gathering improved.');
+            acted = true;
         } else {
             log('Not enough resources to build a farm.');
         }
@@ -121,6 +159,7 @@ function build(type) {
             state.stone -= 10;
             state.barracks++;
             log('You built a barracks!');
+            acted = true;
         } else {
             log('Not enough resources to build a barracks.');
         }
@@ -130,10 +169,12 @@ function build(type) {
             state.stone -= 8;
             state.walls++;
             log('You built a wall!');
+            acted = true;
         } else {
             log('Not enough resources to build a wall.');
         }
     }
+    if (acted) state.turn++;
     updateUI();
 }
 
