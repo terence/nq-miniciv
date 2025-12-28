@@ -266,6 +266,5 @@ function nextTurn() {
 // Advance turn every 20 seconds
 setInterval(nextTurn, 20000);
 
-updateUI();
 // Load state on startup
 openDB().then(loadState).then(updateUI);
