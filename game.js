@@ -66,7 +66,7 @@ function loadState() {
         const req = store.get('current');
         req.onsuccess = function(e) {
             if (e.target.result) {
-                Object.assign(state, e.target.result);
+                state = e.target.result;
             }
             resolve();
         };
@@ -76,9 +76,46 @@ function loadState() {
     });
 }
 
+// Session storage support
+function saveSessionState() {
+    try {
+        sessionStorage.setItem('miniciv_state', JSON.stringify(state));
+    } catch (e) {
+        console.warn('Session storage save failed:', e);
+    }
+}
+
+function loadSessionState() {
+    try {
+        const data = sessionStorage.getItem('miniciv_state');
+        if (data) {
+            state = JSON.parse(data);
+        }
+    } catch (e) {
+        console.warn('Session storage load failed:', e);
+    }
+}
+
 // Save after every action
 function saveAfterAction() {
     saveState();
+}
+
+// Barbarian attack event (5% chance per turn)
+function barbarianAttack() {
+    if (state.turn > 1 && Math.random() < 0.05) {
+        let barbarians = Math.floor(Math.random() * 2) + 1; // 1-2 barbarians
+        if (state.soldiers >= barbarians) {
+            log(`Barbarians attacked (${barbarians}) but your soldiers defended successfully!`);
+            state.soldiers -= barbarians;
+        } else {
+            let lostPop = Math.min(state.population - 1, barbarians * 2);
+            state.population -= lostPop;
+            state.food = Math.max(0, state.food - barbarians * 5);
+            log(`Barbarians attacked (${barbarians})! You lost ${lostPop} population and ${barbarians * 5} food.`);
+        }
+        updateUI();
+    }
 }
 
 function explore() {
@@ -102,6 +139,7 @@ function explore() {
     }
     updateUI();
     saveAfterAction();
+    saveSessionState();
 }
 
 function updateUI() {
@@ -132,20 +170,7 @@ function updateUI() {
     var exploreBtn = document.getElementById('explore-btn');
     if (exploreBtn) exploreBtn.style.display = (state.soldiers > 0) ? '' : 'none';
     updateGraphics();
-    // Barbarian attack event (5% chance per turn)
-    if (state.turn > 1 && Math.random() < 0.05) {
-        let barbarians = Math.floor(Math.random() * 2) + 1; // 1-2 barbarians
-        if (state.soldiers >= barbarians) {
-            log(`Barbarians attacked (${barbarians}) but your soldiers defended successfully!`);
-            state.soldiers -= barbarians;
-        } else {
-            let lostPop = Math.min(state.population - 1, barbarians * 2);
-            state.population -= lostPop;
-            state.food = Math.max(0, state.food - barbarians * 5);
-            log(`Barbarians attacked (${barbarians})! You lost ${lostPop} population and ${barbarians * 5} food.`);
-        }
-        updateUI();
-    }
+    barbarianAttack();
 }
 // Show SVG images for buildings
 function updateGraphics() {
@@ -176,6 +201,7 @@ function trainSoldier() {
         log('You trained a soldier!');
         updateUI();
         saveAfterAction();
+        saveSessionState();
     } else if (state.barracks === 0) {
         log('You need a barracks to train soldiers.');
     } else if (state.food < 5) {
@@ -200,6 +226,7 @@ function gather(resource) {
     log(`You gathered ${amount} ${resource}.`);
     updateUI();
     saveAfterAction();
+    saveSessionState();
 }
 
 function build(type) {
@@ -249,6 +276,7 @@ function build(type) {
     if (acted) state.turn++;
     updateUI();
     if (acted) saveAfterAction();
+    if (acted) saveSessionState();
 }
 
 // Food consumption per population per turn
@@ -261,10 +289,11 @@ function nextTurn() {
     }
     updateUI();
     saveAfterAction();
+    saveSessionState();
 }
 
 // Advance turn every 20 seconds
 setInterval(nextTurn, 20000);
 
 // Load state on startup
-openDB().then(loadState).then(updateUI);
+openDB().then(loadState).then(() => { loadSessionState(); updateUI(); });
